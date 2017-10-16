@@ -8,7 +8,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import ru.penf00k.filesharing.network.server_gui.model.Person;
-import ru.penf00k.filesharing.network.server_gui.view.MainWindowController;
+import ru.penf00k.filesharing.network.server_gui.view.ServerMainWindowController;
 import ru.penf00k.filesharing.server.SQLAuthManager;
 
 import ru.penf00k.filesharing.server.FileExchangerServer;
@@ -29,15 +29,15 @@ public class ServerGUI extends Application implements ServerListener {
         primaryStage.setTitle("File exchange fileExchangerServer");
 
         FXMLLoader loader = new FXMLLoader();
-        loader.setLocation(getClass().getResource("view/main_window.fxml"));
+        loader.setLocation(getClass().getResource("view/server_main_window.fxml"));
         Parent root = loader.load();
-//        Parent root = FXMLLoader.load(getClass().getResource("view/main_window.fxml"));
+//        Parent root = FXMLLoader.load(getClass().getResource("view/server_main_window.fxml"));
         primaryStage.setScene(new Scene(root));
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(event -> System.exit(0));
 
-        MainWindowController mainWindowController = loader.getController();
+        ServerMainWindowController mainWindowController = loader.getController();
         mainWindowController.setFileExchangerServer(fileExchangerServer);
     }
 

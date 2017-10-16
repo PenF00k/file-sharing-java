@@ -3,11 +3,11 @@ package ru.penf00k.filesharing.network.server_gui.view;
 import javafx.fxml.FXML;
 import ru.penf00k.filesharing.server.FileExchangerServer;
 
-public class MainWindowController {
+public class ServerMainWindowController {
 
     private FileExchangerServer fileExchangerServer;
 
-    public MainWindowController() {
+    public ServerMainWindowController() {
     }
 
     @FXML

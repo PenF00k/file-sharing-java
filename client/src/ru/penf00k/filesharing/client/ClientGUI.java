@@ -5,7 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import ru.penf00k.filesharing.client.view.MainWindowController;
+import ru.penf00k.filesharing.client.controller.ClientMainWindowController;
 
 public class ClientGUI extends Application {
 
@@ -21,13 +21,13 @@ public class ClientGUI extends Application {
         primaryStage.setTitle("File sharing client");
 
         FXMLLoader loader = new FXMLLoader();
-        loader.setLocation(getClass().getResource("view/main_window.fxml"));
+        loader.setLocation(getClass().getResource("view/client_main_window.fxml"));
         Parent root = loader.load();
         primaryStage.setScene(new Scene(root));
 
         primaryStage.setOnCloseRequest(event -> System.exit(0));
 
-        MainWindowController mainWindowController = loader.getController();
+        ClientMainWindowController mainWindowController = loader.getController();
         mainWindowController.setPrimaryStage(primaryStage);
 
         primaryStage.show();

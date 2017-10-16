@@ -1,4 +1,4 @@
-package ru.penf00k.filesharing.client.view;
+package ru.penf00k.filesharing.client.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -7,14 +7,14 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import ru.penf00k.filesharing.common.FileMessage;
 import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 
-public class MainWindowController implements SocketThreadListener {
+public class ClientMainWindowController implements SocketThreadListener {
 
     private static final String LOGIN_PATTERN = "^[A-Za-z]\\w{2,14}$";
     private static final String PASSWORD_PATTERN = "^\\w{3,15}$";
@@ -35,16 +35,23 @@ public class MainWindowController implements SocketThreadListener {
     private Button btnConnect;
     @FXML
     private Button btnDisconnect;
+    @FXML
+    private Button btnPickFile;
+    @FXML
+    private Button btnSendFile; //TODO убрать эту кнопку, не нужна она
 
     private Stage primaryStage;
 
     private Socket socket;
     private SocketThread socketThread;
 
+    private File file;
+    private ObjectOutputStream oos;
+    private ObjectInputStream ois;
     private String msg;
     private int port;
 
-    public MainWindowController() {
+    public ClientMainWindowController() {
     }
 
     @FXML
@@ -54,6 +61,7 @@ public class MainWindowController implements SocketThreadListener {
         tfPassword.setText("123456");
         tfIPAddress.setText("127.0.0.1");
         tfPort.setText("9000");
+        setFieldsDisabled(false);
     }
 
     @FXML
@@ -65,7 +73,9 @@ public class MainWindowController implements SocketThreadListener {
             try {
                 socket = new Socket(tfIPAddress.getText(), port);
                 socketThread = new SocketThread("SocketThread", this, socket);
-                setFieldsEditable(true);
+                setFieldsDisabled(true);
+                oos = new ObjectOutputStream(socket.getOutputStream());
+                ois = new ObjectInputStream(socket.getInputStream());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -110,14 +120,16 @@ public class MainWindowController implements SocketThreadListener {
         return false;
     }
 
-    private void setFieldsEditable(boolean editable) {
-        tfLogin.setDisable(editable);
-        tfPassword.setDisable(editable);
-        tfIPAddress.setDisable(editable);
-        tfPort.setDisable(editable);
+    private void setFieldsDisabled(boolean disabled) {
+        tfLogin.setDisable(disabled);
+        tfPassword.setDisable(disabled);
+        tfIPAddress.setDisable(disabled);
+        tfPort.setDisable(disabled);
 
-        btnConnect.setDisable(editable);
-        btnDisconnect.setDisable(!editable);
+        btnConnect.setDisable(disabled);
+        btnDisconnect.setDisable(!disabled);
+        btnPickFile.setDisable(!disabled);
+        btnSendFile.setDisable(disabled);
     }
 
     private boolean isEmptyField(TextField tf) {
@@ -131,7 +143,7 @@ public class MainWindowController implements SocketThreadListener {
         socketThread.close();
         try {
             socket.close();
-            setFieldsEditable(false);
+            setFieldsDisabled(false);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -142,16 +154,22 @@ public class MainWindowController implements SocketThreadListener {
         System.out.println("selectFile()"); //TODO
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select file to upload");
-        File file = fileChooser.showOpenDialog(primaryStage);
-        if (file != null) {
-            System.out.println("File path: " + file.getAbsolutePath());
-            socketThread.sendMessage("File path: " + file.getAbsolutePath());
-        }
+        file = fileChooser.showOpenDialog(primaryStage);
+        lblPathToFile.setText(file.getAbsolutePath());
+        btnSendFile.setDisable(false);
     }
 
     @FXML
     private void sendFile() {
         System.out.println("sendFile()"); //TODO
+        if (file != null) {
+            String filePath = file.getAbsolutePath();
+            String name = file.getName();
+            FileMessage fileMessage = new FileMessage(file, name);
+            socketThread.sendMessage(fileMessage);
+            System.out.println("File path: " + filePath);
+//            socketThread.sendMessage("File path: " + filePath);
+        } //TODO else alert dialog
     }
 
     public void setPrimaryStage(Stage primaryStage) {

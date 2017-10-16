@@ -68,7 +68,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     @Override
     public void onAcceptedSocket(ServerSocketThread thread, ServerSocket serverSocket, Socket socket) {
         putLog("Client connected");
-        String threadName = "Socket thread: " + socket.getInetAddress() + ": " + socket.getPort();
+        String threadName = "Socket thread: " + socket.getInetAddress() + ":" + socket.getPort();
         new FileExchangerSocketThread(threadName, this, socket);
     }
 
@@ -103,6 +103,11 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
         if (client.isAuthorized()) {
             // TODO
         }
+    }
+
+    @Override
+    public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, Object msg) {
+
     }
 
     @Override

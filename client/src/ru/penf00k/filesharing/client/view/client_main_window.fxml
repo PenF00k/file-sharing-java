@@ -11,15 +11,14 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 
-
-<BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.penf00k.filesharing.client.view.MainWindowController">
+<BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.penf00k.filesharing.client.controller.ClientMainWindowController">
    <bottom>
       <ButtonBar buttonMinWidth="0.0" BorderPane.alignment="CENTER">
         <buttons>
           <Button fx:id="btnConnect" mnemonicParsing="false" onAction="#connect" text="Сonnect" />
             <Button fx:id="btnDisconnect" mnemonicParsing="false" onAction="#disconnect" text="Disconnect" />
-            <Button mnemonicParsing="false" onAction="#selectFile" text="Select File" />
-            <Button mnemonicParsing="false" onAction="#sendFile" text="Send File" />
+            <Button fx:id="btnPickFile" mnemonicParsing="false" onAction="#selectFile" text="Select File" />
+            <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#sendFile" text="Send File" />
         </buttons>
       </ButtonBar>
    </bottom>
