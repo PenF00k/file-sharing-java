@@ -111,7 +111,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     private FileMessage fm;
 
     @Override
-    public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
+    public synchronized void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
         if (message instanceof FileMessage) {
             fm = (FileMessage) message;
             TextMessage textMessage = new TextMessage("type = " + fm.getType() + ", file name = " + fm.getFile().getName());
@@ -120,18 +120,17 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     }
 
     @Override
-    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
+    public synchronized void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
         //TODO
-        try {
-            File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());
-            FileOutputStream fos = new FileOutputStream(file);
-            int bytesSent;
+        File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            int bytesRead;
+            int totalBytes = 0;
             byte[] buffer = new byte[8192];
-            while ((bytesSent = ois.read(buffer)) != -1) {
-                fos.write(buffer, 0, bytesSent);
+            while (totalBytes < fm.getLength() && (bytesRead = ois.read(buffer)) != -1) { //TODO задать вопрос: если поменять местами условие, то цикл бесконечный
+                fos.write(buffer, 0, bytesRead);
+                totalBytes += bytesRead;
             }
-            fos.flush();
-            fos.close();
             System.out.println("File saves fine");
         } catch (IOException e) {
             e.printStackTrace();

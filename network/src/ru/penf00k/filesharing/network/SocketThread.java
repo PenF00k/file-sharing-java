@@ -36,7 +36,6 @@ public class SocketThread extends Thread {
 
                     if (message instanceof FileMessage) {
                         System.out.println("Message is instance of FileMessage");
-                        FileMessage fm = (FileMessage) message;
                         listener.onReceiveFile(this, socket, ois);
                     } else if (message instanceof TextMessage) {
                         System.out.println("Message is instance of TextMessage");
@@ -69,15 +68,13 @@ public class SocketThread extends Thread {
     }
 
     public synchronized void sendFile(File file) {
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            int bytesSent;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            int bytesRead;
             byte[] buffer = new byte[8192];
-            while ((bytesSent = fis.read(buffer)) != -1) {
-                oos.write(buffer, 0, bytesSent);
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                oos.write(buffer, 0, bytesRead);
             }
             oos.flush();
-            fis.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
