@@ -34,15 +34,10 @@ public class SocketThread extends Thread {
                     Object message = ois.readObject();
                     listener.onReceiveObjectMessage(this, socket, (AbstractMessage) message);
 
-//                    if (message instanceof TextMessage) {
-//                        System.out.println("Message is instance of TextMessage");
-//                        listener.onReceiveString(this, socket, ((TextMessage) message).getText());
-//                    }
-
                     if (message instanceof FileMessage) {
                         System.out.println("Message is instance of FileMessage");
                         FileMessage fm = (FileMessage) message;
-                        listener.onReceiveFile(this, socket, ois, fm.getLength());
+                        listener.onReceiveFile(this, socket, ois);
                     } else if (message instanceof TextMessage) {
                         System.out.println("Message is instance of TextMessage");
                         listener.onReceiveString(this, socket, ((TextMessage) message).getText());
@@ -50,9 +45,7 @@ public class SocketThread extends Thread {
                         throw new RuntimeException("Invalid message type");
                     }
                 } catch (OptionalDataException e) {
-                    System.out.println("EXCEPTION!!");
                     e.printStackTrace();
-                    System.out.println("object: " + ois.readObject());
                 }
             }
         } catch (IOException e) {

@@ -13,7 +13,7 @@ public interface SocketThreadListener {
     void onReadySocketThread(SocketThread socketThread, Socket socket);
     void onReceiveString(SocketThread socketThread, Socket socket, String value);
     void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message);
-    void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois, int fileLength);
+    void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois);
 
     void onExceptionSocketThread(SocketThread socketThread, Socket socket, Exception e);
 }

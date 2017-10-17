@@ -120,7 +120,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     }
 
     @Override
-    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois, int fileLength) {
+    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
         //TODO
         try {
             File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());

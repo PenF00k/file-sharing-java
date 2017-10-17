@@ -228,7 +228,7 @@ public class ClientMainWindowController implements SocketThreadListener {
     }
 
     @Override
-    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois, int fileLength) {
+    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
         //TODO
     }
 
