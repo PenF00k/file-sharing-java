@@ -1,10 +1,14 @@
 package ru.penf00k.filesharing.server;
 
+import ru.penf00k.filesharing.common.AbstractMessage;
+import ru.penf00k.filesharing.common.FileMessage;
+import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.ServerSocketThread;
 import ru.penf00k.filesharing.network.ServerSocketThreadListener;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 import ru.penf00k.filesharing.network.SocketThread;
 
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
@@ -99,19 +103,44 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     public synchronized void onReceiveString(SocketThread socketThread, Socket socket, String value) {
         client = (FileExchangerSocketThread) socketThread;
         System.out.println("FileExchangerServer received string: " + value);
-        socketThread.sendMessage("echo: " + value);
         if (client.isAuthorized()) {
             // TODO
         }
     }
 
-    @Override
-    public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, Object msg) {
+    private FileMessage fm;
 
+    @Override
+    public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
+        int type;
+        if (message instanceof FileMessage) {
+            fm = (FileMessage) message;
+            File file = fm.getFile();
+            System.out.println("file name = " + file.getName());
+            type = fm.getType();
+            System.out.println("FileMessage type = " + type);
+            TextMessage textMessage = new TextMessage("echo type = " + type);
+            socketThread.sendMessageObject(textMessage);
+        }
+    }
+
+    @Override
+    public void onReceiveFile(SocketThread socketThread, Socket socket, byte[] fileBytes) {
+        //TODO
+        try {
+            File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());
+            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
+            bos.write(fileBytes);
+            bos.flush();
+            bos.close();
+            System.out.println("File saves fine");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public synchronized void onExceptionSocketThread(SocketThread socketThread, Socket socket, Exception e) {
-
+        e.printStackTrace();
     }
 }

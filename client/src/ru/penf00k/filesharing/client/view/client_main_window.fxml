@@ -17,7 +17,7 @@
         <buttons>
           <Button fx:id="btnConnect" mnemonicParsing="false" onAction="#connect" text="Сonnect" />
             <Button fx:id="btnDisconnect" mnemonicParsing="false" onAction="#disconnect" text="Disconnect" />
-            <Button fx:id="btnPickFile" mnemonicParsing="false" onAction="#selectFile" text="Select File" />
+            <Button fx:id="btnChooseFile" mnemonicParsing="false" onAction="#chooseFile" text="Select File" />
             <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#sendFile" text="Send File" />
         </buttons>
       </ButtonBar>
@@ -50,7 +50,7 @@
                   <TextField fx:id="tfIPAddress" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                   <TextField fx:id="tfPort" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                   <Label text="File path" GridPane.rowIndex="4" />
-                  <Label fx:id="lblPathToFile" text="path" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                  <Label fx:id="lblPathToFile" GridPane.columnIndex="1" GridPane.rowIndex="4" />
                </children>
             </GridPane>
          </children>

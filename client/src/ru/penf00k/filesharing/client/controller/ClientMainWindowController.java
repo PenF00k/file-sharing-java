@@ -7,7 +7,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import ru.penf00k.filesharing.common.AbstractMessage;
 import ru.penf00k.filesharing.common.FileMessage;
+import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
@@ -20,6 +22,7 @@ public class ClientMainWindowController implements SocketThreadListener {
     private static final String PASSWORD_PATTERN = "^\\w{3,15}$";
     private static final String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
     private static final String PORT_PATTERN = "^\\d+$";
+    private static final int MAX_FILE_SIZE = 1024 * 1024 * 5; // in bytes
 
     @FXML
     private TextField tfLogin;
@@ -36,7 +39,7 @@ public class ClientMainWindowController implements SocketThreadListener {
     @FXML
     private Button btnDisconnect;
     @FXML
-    private Button btnPickFile;
+    private Button btnChooseFile;
     @FXML
     private Button btnSendFile; //TODO убрать эту кнопку, не нужна она
 
@@ -45,9 +48,8 @@ public class ClientMainWindowController implements SocketThreadListener {
     private Socket socket;
     private SocketThread socketThread;
 
+    private final FileChooser fileChooser = new FileChooser();
     private File file;
-    private ObjectOutputStream oos;
-    private ObjectInputStream ois;
     private String msg;
     private int port;
 
@@ -62,6 +64,7 @@ public class ClientMainWindowController implements SocketThreadListener {
         tfIPAddress.setText("127.0.0.1");
         tfPort.setText("9000");
         setFieldsDisabled(false);
+        btnSendFile.setDisable(true);
     }
 
     @FXML
@@ -74,8 +77,6 @@ public class ClientMainWindowController implements SocketThreadListener {
                 socket = new Socket(tfIPAddress.getText(), port);
                 socketThread = new SocketThread("SocketThread", this, socket);
                 setFieldsDisabled(true);
-                oos = new ObjectOutputStream(socket.getOutputStream());
-                ois = new ObjectInputStream(socket.getInputStream());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -128,7 +129,7 @@ public class ClientMainWindowController implements SocketThreadListener {
 
         btnConnect.setDisable(disabled);
         btnDisconnect.setDisable(!disabled);
-        btnPickFile.setDisable(!disabled);
+        btnChooseFile.setDisable(!disabled);
         btnSendFile.setDisable(disabled);
     }
 
@@ -140,36 +141,55 @@ public class ClientMainWindowController implements SocketThreadListener {
     @FXML
     private void disconnect() {
         System.out.println("disconnect()"); //TODO
+        file = null;
+        lblPathToFile.setText("");
         socketThread.close();
         try {
             socket.close();
             setFieldsDisabled(false);
+            btnSendFile.setDisable(true);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    private final File defaultDirectory = new File("C:\\Users\\curly\\Desktop");
+
     @FXML
-    private void selectFile() {
-        System.out.println("selectFile()"); //TODO
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select file to upload");
-        file = fileChooser.showOpenDialog(primaryStage);
+    private void chooseFile() {
+        fileChooser.setTitle("Choose a file to upload");
+        do {
+            fileChooser.setInitialDirectory(file == null ? defaultDirectory : file.getParentFile());
+            file = fileChooser.showOpenDialog(primaryStage);
+            if (file == null) return;
+            System.out.println("file length = " + file.length());
+            if (file.length() <= MAX_FILE_SIZE) break;
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("File size is too large");
+            alert.setHeaderText("Please choose another file");
+            alert.setContentText("Please choose a file with size less than 5 mb");
+            alert.showAndWait();
+        } while (file.length() > MAX_FILE_SIZE);
         lblPathToFile.setText(file.getAbsolutePath());
         btnSendFile.setDisable(false);
     }
 
     @FXML
     private void sendFile() {
-        System.out.println("sendFile()"); //TODO
         if (file != null) {
-            String filePath = file.getAbsolutePath();
-            String name = file.getName();
-            FileMessage fileMessage = new FileMessage(file, name);
-            socketThread.sendMessage(fileMessage);
-            System.out.println("File path: " + filePath);
-//            socketThread.sendMessage("File path: " + filePath);
-        } //TODO else alert dialog
+            FileMessage fileMessage = new FileMessage(file, (int) file.length());
+            socketThread.sendMessageObject(fileMessage);
+            socketThread.sendFile(file);
+            file = null;
+            lblPathToFile.setText("");
+            btnSendFile.setDisable(true);
+        } else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("No file chosen");
+            alert.setHeaderText("Please choose a file");
+            alert.setContentText("Please choose a file");
+            alert.showAndWait();
+        }
     }
 
     public void setPrimaryStage(Stage primaryStage) {
@@ -179,12 +199,13 @@ public class ClientMainWindowController implements SocketThreadListener {
     // SocketThreadListener
     @Override
     public void onStartSocketThread(SocketThread socketThread) {
-
+        System.out.println("SocketThread started");
     }
 
     @Override
     public void onStopSocketThread(SocketThread socketThread) {
-
+        System.out.println("SocketThread stopped");
+        //TODO disconnect this client with error
     }
 
     @Override
@@ -198,7 +219,23 @@ public class ClientMainWindowController implements SocketThreadListener {
     }
 
     @Override
-    public void onExceptionSocketThread(SocketThread socketThread, Socket socket, Exception e) {
+    public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
+        int type;
+        if (message instanceof TextMessage) {
+            TextMessage tm = (TextMessage) message;
+            type = tm.getType();
+            String text = tm.getText();
+            System.out.println("TextMessage from server: " + text);
+        }
+    }
 
+    @Override
+    public void onReceiveFile(SocketThread socketThread, Socket socket, byte[] fileBytes) {
+        //TODO
+    }
+
+    @Override
+    public void onExceptionSocketThread(SocketThread socketThread, Socket socket, Exception e) {
+        e.printStackTrace();
     }
 }
