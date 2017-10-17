@@ -215,22 +215,20 @@ public class ClientMainWindowController implements SocketThreadListener {
 
     @Override
     public void onReceiveString(SocketThread socketThread, Socket socket, String value) {
-        System.out.println("Client received string: " + value);
+
     }
 
     @Override
     public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
-        int type;
         if (message instanceof TextMessage) {
             TextMessage tm = (TextMessage) message;
-            type = tm.getType();
             String text = tm.getText();
             System.out.println("TextMessage from server: " + text);
         }
     }
 
     @Override
-    public void onReceiveFile(SocketThread socketThread, Socket socket, byte[] fileBytes) {
+    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois, int fileLength) {
         //TODO
     }
 

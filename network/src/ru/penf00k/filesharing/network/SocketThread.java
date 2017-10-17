@@ -14,7 +14,6 @@ public class SocketThread extends Thread {
     private Socket pairedSocket;
     private ObjectOutputStream oos;
     private ObjectInputStream ois;
-    private final byte[] buffer = new byte[8192]; // TODO delete
 
     public SocketThread(String name, SocketThreadListener listener, Socket socket) {
         super(name);
@@ -34,13 +33,21 @@ public class SocketThread extends Thread {
                 try {
                     Object message = ois.readObject();
                     listener.onReceiveObjectMessage(this, socket, (AbstractMessage) message);
+
+//                    if (message instanceof TextMessage) {
+//                        System.out.println("Message is instance of TextMessage");
+//                        listener.onReceiveString(this, socket, ((TextMessage) message).getText());
+//                    }
+
                     if (message instanceof FileMessage) {
+                        System.out.println("Message is instance of FileMessage");
                         FileMessage fm = (FileMessage) message;
-                        byte[] fileBytes = new byte[fm.getLength()];
-                        ois.read(fileBytes, 0, fm.getLength());
-                        listener.onReceiveFile(this, socket, fileBytes);
+                        listener.onReceiveFile(this, socket, ois, fm.getLength());
                     } else if (message instanceof TextMessage) {
+                        System.out.println("Message is instance of TextMessage");
                         listener.onReceiveString(this, socket, ((TextMessage) message).getText());
+                    } else {
+                        throw new RuntimeException("Invalid message type");
                     }
                 } catch (OptionalDataException e) {
                     System.out.println("EXCEPTION!!");
@@ -58,12 +65,6 @@ public class SocketThread extends Thread {
         }
     }
 
-//    private byte[] getFileBytes(FileMessage fm) throws IOException {
-//        byte[] fileBytes = new byte[fm.getLength()];
-//        ois.read(fileBytes, 0, fm.getLength());
-//        return fileBytes;
-//    }
-
     public synchronized void sendMessageObject(AbstractMessage msg) {
         try {
             oos.writeObject(msg);
@@ -76,14 +77,14 @@ public class SocketThread extends Thread {
 
     public synchronized void sendFile(File file) {
         try {
-            byte[] fileBytes = new byte[(int) file.length()];
-            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-//            int bytesSent;
-//            while ((bytesSent = ))
-            bis.read(fileBytes, 0, fileBytes.length);
-            oos.write(fileBytes, 0, fileBytes.length);
+            FileInputStream fis = new FileInputStream(file);
+            int bytesSent;
+            byte[] buffer = new byte[8192];
+            while ((bytesSent = fis.read(buffer)) != -1) {
+                oos.write(buffer, 0, bytesSent);
+            }
             oos.flush();
-            bis.close();
+            fis.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -96,8 +97,6 @@ public class SocketThread extends Thread {
         try {
             ois.close();
             oos.close();
-//            dis.close();
-//            dos.close();
             socket.close();
         } catch (IOException e) {
             listener.onExceptionSocketThread(this, socket, e);

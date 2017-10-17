@@ -112,27 +112,26 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
 
     @Override
     public void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
-        int type;
         if (message instanceof FileMessage) {
             fm = (FileMessage) message;
-            File file = fm.getFile();
-            System.out.println("file name = " + file.getName());
-            type = fm.getType();
-            System.out.println("FileMessage type = " + type);
-            TextMessage textMessage = new TextMessage("echo type = " + type);
+            TextMessage textMessage = new TextMessage("type = " + fm.getType() + ", file name = " + fm.getFile().getName());
             socketThread.sendMessageObject(textMessage);
         }
     }
 
     @Override
-    public void onReceiveFile(SocketThread socketThread, Socket socket, byte[] fileBytes) {
+    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois, int fileLength) {
         //TODO
         try {
             File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
-            bos.write(fileBytes);
-            bos.flush();
-            bos.close();
+            FileOutputStream fos = new FileOutputStream(file);
+            int bytesSent;
+            byte[] buffer = new byte[8192];
+            while ((bytesSent = ois.read(buffer)) != -1) {
+                fos.write(buffer, 0, bytesSent);
+            }
+            fos.flush();
+            fos.close();
             System.out.println("File saves fine");
         } catch (IOException e) {
             e.printStackTrace();
