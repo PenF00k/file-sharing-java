@@ -26,18 +26,26 @@
     <!--<packaging>jar</packaging>-->
 
     <build>
-        <finalName>Client</finalName>
+        <finalName>FileSharingClient</finalName>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <addClasspath>true</addClasspath>
                             <mainClass>ru.penf00k.filesharing.client.ClientGUI</mainClass>
                         </manifest>
                     </archive>
+                    <descriptorRefs>jar-with-dependencies</descriptorRefs>
                 </configuration>
             </plugin>
             <plugin>

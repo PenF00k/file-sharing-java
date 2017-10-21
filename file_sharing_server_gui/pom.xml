@@ -19,16 +19,26 @@
     <artifactId>file_sharing_server_gui</artifactId>
 
     <build>
+        <finalName>FileSharingServer</finalName>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>ServerGUI</mainClass>
+                            <mainClass>ru.penf00k.filesharing.network.server_gui.ServerGUI</mainClass>
                         </manifest>
                     </archive>
+                    <descriptorRefs>jar-with-dependencies</descriptorRefs>
                 </configuration>
             </plugin>
             <plugin>
