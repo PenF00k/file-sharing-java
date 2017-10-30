@@ -88,14 +88,19 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
 
         if (sbErrorMessage.length() == 0) {
             return true;
-        } else {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle("Errors in fields");
-            alert.setHeaderText("Please correct the invalid fields");
-            alert.setContentText(sbErrorMessage.toString());
-            alert.showAndWait();
-        }
+        } else showAlertDialog(Alert.AlertType.ERROR,
+                    "Errors in fields",
+                    "Please correct the invalid fields",
+                    sbErrorMessage.toString());
 
         return false;
+    }
+
+    private void showAlertDialog(Alert.AlertType type, String title, String header, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }
