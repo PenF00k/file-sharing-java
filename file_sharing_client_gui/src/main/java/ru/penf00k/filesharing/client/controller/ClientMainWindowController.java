@@ -1,11 +1,16 @@
 package ru.penf00k.filesharing.client.controller;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ru.penf00k.filesharing.common.AbstractMessage;
 import ru.penf00k.filesharing.common.FileMessage;
@@ -34,6 +39,8 @@ public class ClientMainWindowController implements SocketThreadListener {
     private TextField tfPort;
     @FXML
     private Label lblPathToFile;
+    @FXML
+    private Button btnOpenAuthWindow;
     @FXML
     private Button btnConnect;
     @FXML
@@ -189,6 +196,23 @@ public class ClientMainWindowController implements SocketThreadListener {
             alert.setHeaderText("Please choose a file");
             alert.setContentText("Please choose a file");
             alert.showAndWait();
+        }
+    }
+
+    @FXML
+    private void openAuthWindow() {
+        try {
+            Stage authStage = new Stage();
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(getClass().getClassLoader().getResource("client_auth_window.fxml"));
+            Parent root = loader.load();
+            authStage.setTitle("Authentication");
+            authStage.initModality(Modality.WINDOW_MODAL);
+            authStage.initOwner(primaryStage);
+            authStage.setScene(new Scene(root));
+            authStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

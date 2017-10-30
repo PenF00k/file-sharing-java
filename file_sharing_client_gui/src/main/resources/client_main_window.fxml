@@ -11,10 +11,11 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.141" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.penf00k.filesharing.client.controller.ClientMainWindowController">
+<BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.penf00k.filesharing.client.controller.ClientMainWindowController">
    <bottom>
       <ButtonBar buttonMinWidth="0.0" BorderPane.alignment="CENTER">
         <buttons>
+            <Button fx:id="btnOpenAuthWindow" mnemonicParsing="false" onAction="#openAuthWindow" text="Open auth window" />
           <Button fx:id="btnConnect" mnemonicParsing="false" onAction="#connect" text="Сonnect" />
             <Button fx:id="btnDisconnect" mnemonicParsing="false" onAction="#disconnect" text="Disconnect" />
             <Button fx:id="btnChooseFile" mnemonicParsing="false" onAction="#chooseFile" text="Select File" />
