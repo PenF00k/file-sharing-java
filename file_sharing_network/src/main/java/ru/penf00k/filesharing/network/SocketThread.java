@@ -2,6 +2,7 @@ package ru.penf00k.filesharing.network;
 
 import ru.penf00k.filesharing.common.AbstractMessage;
 import ru.penf00k.filesharing.common.FileMessage;
+import ru.penf00k.filesharing.common.RegisterMessage;
 import ru.penf00k.filesharing.common.TextMessage;
 
 import java.io.*;
@@ -40,6 +41,8 @@ public class SocketThread extends Thread {
                     } else if (message instanceof TextMessage) {
                         System.out.println("Message is instance of TextMessage");
                         listener.onReceiveString(this, socket, ((TextMessage) message).getText());
+                    } else if (message instanceof RegisterMessage) {
+                        System.out.println("Message is instance of RegisterMessage");
                     } else {
                         throw new RuntimeException("Invalid message type");
                     }

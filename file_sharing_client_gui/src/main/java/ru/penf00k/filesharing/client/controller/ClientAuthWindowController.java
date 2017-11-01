@@ -3,27 +3,28 @@ package ru.penf00k.filesharing.client.controller;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.stage.Stage;
+import javafx.scene.control.*;
+import ru.penf00k.filesharing.common.RegisterMessage;
+import ru.penf00k.filesharing.common.TextMessage;
+import ru.penf00k.filesharing.network.SocketThread;
 
 public class ClientAuthWindowController implements EventHandler<ActionEvent> {
 
-    private static final String NICKNAME_PATTERN = "^[A-Za-z]\\w{2,14}$";
+    private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{2,14}$";
     private static final String PASSWORD_PATTERN = "^\\w{3,15}$";
+    private State currentState;
+    private SocketThread socketThread;
 
     @FXML
     private Button btnSelectLogin;
     @FXML
     private Button btnSelectRegister;
     @FXML
-    private TextField tfNickname;
+    private TextField tfUsername;
     @FXML
-    private TextField tfPassword;
+    private PasswordField pfPassword;
     @FXML
-    private TextField tfConfirmPassword;
+    private PasswordField pfConfirmPassword;
     @FXML
     private Button btnProceedLoginRegister;
     @FXML
@@ -41,14 +42,15 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
     }
 
     private void setStageFromState(State state) {
+        currentState = state;
         switch (state) {
             case LOGIN:
-                tfConfirmPassword.setVisible(false);
+                pfConfirmPassword.setVisible(false);
                 btnProceedLoginRegister.setText("Login");
                 lblForgotPassword.setVisible(true);
                 break;
             case REGISTER:
-                tfConfirmPassword.setVisible(true);
+                pfConfirmPassword.setVisible(true);
                 btnProceedLoginRegister.setText("Register");
                 lblForgotPassword.setVisible(false);
                 break;
@@ -73,17 +75,31 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
         if (!isInputValid()) return;
         System.out.println("Input ok"); // TODO delete
         //TODO проверить, есть ли в базе такая пара логин-пароль
+        switch (currentState) {
+            case LOGIN:
+                //TODO
+                socketThread.sendMessageObject(new TextMessage("Text was delivered ok"));
+                break;
+            case REGISTER:
+                RegisterMessage registerMessage = new RegisterMessage(tfUsername.getText(), pfPassword.getText());
+                socketThread.sendMessageObject(registerMessage);
+                break;
+            default: throw new RuntimeException("Invalid stage state");
+        }
     }
 
     private boolean isInputValid() {
         //TODO сделать как в android setError
         StringBuilder sbErrorMessage = new StringBuilder();
 
-        if (!tfNickname.getText().matches(NICKNAME_PATTERN)) {
-            sbErrorMessage.append("Login must start with a letter and have length from 3 to 15 characters\n");
+        if (!tfUsername.getText().matches(USERNAME_PATTERN)) {
+            sbErrorMessage.append("Username must start with a letter and have length from 3 to 15 characters\n");
         }
-        if (!tfPassword.getText().matches(PASSWORD_PATTERN)) {
+        if (!pfPassword.getText().matches(PASSWORD_PATTERN)) {
             sbErrorMessage.append("Password must contain only letters and digits and have length from 3 to 15 characters\n");
+        }
+        if (currentState == State.REGISTER && !pfPassword.getText().equals(pfConfirmPassword.getText())) {
+            sbErrorMessage.append("Password and Confirm Password fields must be the same\n");
         }
 
         if (sbErrorMessage.length() == 0) {
@@ -102,5 +118,9 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+
+    public void setSocketThread(SocketThread socketThread) {
+        this.socketThread = socketThread;
     }
 }

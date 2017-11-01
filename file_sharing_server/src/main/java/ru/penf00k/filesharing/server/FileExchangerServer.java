@@ -2,6 +2,7 @@ package ru.penf00k.filesharing.server;
 
 import ru.penf00k.filesharing.common.AbstractMessage;
 import ru.penf00k.filesharing.common.FileMessage;
+import ru.penf00k.filesharing.common.RegisterMessage;
 import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.ServerSocketThread;
 import ru.penf00k.filesharing.network.ServerSocketThreadListener;
@@ -116,6 +117,9 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
             fm = (FileMessage) message;
             TextMessage textMessage = new TextMessage("type = " + fm.getType() + ", file name = " + fm.getFile().getName());
             socketThread.sendMessageObject(textMessage);
+        } else if (message instanceof RegisterMessage) {
+            RegisterMessage rm = (RegisterMessage) message;
+            authManager.addNewUser(rm.getUsername(), rm.getPassword());
         }
     }
 

@@ -206,6 +206,8 @@ public class ClientMainWindowController implements SocketThreadListener {
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(getClass().getClassLoader().getResource("client_auth_window.fxml"));
             Parent root = loader.load();
+            ClientAuthWindowController controller = loader.getController();
+            controller.setSocketThread(socketThread);
             authStage.setTitle("Authentication");
             authStage.initModality(Modality.WINDOW_MODAL);
             authStage.initOwner(primaryStage);
