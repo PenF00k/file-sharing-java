@@ -14,9 +14,8 @@ import ru.penf00k.filesharing.server.SQLAuthManager;
 import ru.penf00k.filesharing.server.FileExchangerServer;
 import ru.penf00k.filesharing.server.ServerListener;
 
-public class ServerGUI extends Application implements ServerListener {
+public class ServerGUI extends Application{
 
-    private final FileExchangerServer fileExchangerServer = new FileExchangerServer(this, new SQLAuthManager());
 
     private ObservableList<Person> personData = FXCollections.observableArrayList(); //TODO
 
@@ -36,20 +35,11 @@ public class ServerGUI extends Application implements ServerListener {
         primaryStage.show();
 
         primaryStage.setOnCloseRequest(event -> System.exit(0));
-
-        ServerMainWindowController mainWindowController = loader.getController();
-        mainWindowController.setFileExchangerServer(fileExchangerServer);
+//        fileExchangerServer.startListening(9000);
     }
 
 // TODO
 //    public ObservableList<Person> getPersonData() {
 //        return personData;
 //    }
-
-
-    @Override
-    public void onServerLog(FileExchangerServer fileExchangerServer, String msg) {
-        //TODO куда писать логи
-        System.out.println(msg);
-    }
 }

@@ -1,6 +1,8 @@
 package ru.penf00k.filesharing.client.controller;
 
 import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -17,12 +19,12 @@ import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
 import java.io.*;
-import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Properties;
 
-public class ClientMainWindowController implements SocketThreadListener {
+public class ClientMainWindowController implements SocketThreadListener, EventHandler<ActionEvent> {
 
+    private static final String CLIENT_MAIN_WINDOW_TITLE = "File sharing client";
     private static final int MAX_FILE_SIZE = 1024 * 1024 * 5; // in bytes
     static final String PROPERTIES_FILE = "./fs.properties";
     static final String PROPERTY_USERNAME = "username";
@@ -37,7 +39,7 @@ public class ClientMainWindowController implements SocketThreadListener {
     @FXML
     private Button btnChooseFile;
     @FXML
-    private Button btnSendFile; //TODO убрать эту кнопку, не нужна она
+    private Button btnUploadFile; //TODO убрать эту кнопку, не нужна она
 
     private Stage primaryStage;
 
@@ -58,10 +60,14 @@ public class ClientMainWindowController implements SocketThreadListener {
     @FXML
     private void initialize() {
         System.out.println("ClientGUI controller initialize()"); //TODO
+        btnOpenAuthWindow.setOnAction(this);
+        btnChooseFile.setOnAction(this);
+        btnUploadFile.setOnAction(this);
         setFieldsDisabled(false);
-        btnSendFile.setDisable(true);
+        btnUploadFile.setDisable(true);
         initProperties();
         connect();
+        Platform.runLater(() -> primaryStage.setTitle(CLIENT_MAIN_WINDOW_TITLE));
 //        tryAuthorise();
     }
 
@@ -125,7 +131,7 @@ public class ClientMainWindowController implements SocketThreadListener {
 
     private void setFieldsDisabled(boolean disabled) {
         btnChooseFile.setDisable(!disabled);
-        btnSendFile.setDisable(disabled);
+        btnUploadFile.setDisable(disabled);
     }
 
     private boolean isEmptyField(TextField tf) {
@@ -141,7 +147,7 @@ public class ClientMainWindowController implements SocketThreadListener {
         try {
             socket.close();
             setFieldsDisabled(false);
-            btnSendFile.setDisable(true);
+            btnUploadFile.setDisable(true);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -149,7 +155,6 @@ public class ClientMainWindowController implements SocketThreadListener {
 
     private final File defaultDirectory = new File("C:\\Users\\curly\\Desktop");
 
-    @FXML
     private void chooseFile() {
         fileChooser.setTitle("Choose a file to upload");
         do {
@@ -165,10 +170,9 @@ public class ClientMainWindowController implements SocketThreadListener {
             alert.showAndWait();
         } while (file.length() > MAX_FILE_SIZE);
         lblPathToFile.setText(file.getAbsolutePath());
-        btnSendFile.setDisable(false);
+        btnUploadFile.setDisable(false);
     }
 
-    @FXML
     private void sendFile() {
         if (file != null) {
             FileMessage fileMessage = new FileMessage(file, (int) file.length());
@@ -176,7 +180,7 @@ public class ClientMainWindowController implements SocketThreadListener {
             socketThread.sendFile(file);
             file = null;
             lblPathToFile.setText("");
-            btnSendFile.setDisable(true);
+            btnUploadFile.setDisable(true);
         } else {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("No file chosen");
@@ -188,7 +192,6 @@ public class ClientMainWindowController implements SocketThreadListener {
 
     private Stage authStage;
 
-    @FXML
     private void showAuthWindow() {
         Platform.runLater(() -> {
             try {
@@ -222,7 +225,7 @@ public class ClientMainWindowController implements SocketThreadListener {
     }
 
     @Override
-    public void onStopSocketThread(SocketThread socketThread) {
+    public void onStopSocketThread(SocketThread socketThread, Socket socket) {
         System.out.println("SocketThread stopped");
         //TODO сделать диалог при отвале сервера и убрать закрытие stage
         Platform.runLater(() -> {
@@ -254,14 +257,22 @@ public class ClientMainWindowController implements SocketThreadListener {
             Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
             switch (sm.getResponse()) {
                 case AUTHORIZATION_OK:
-                    if (authStage != null) Platform.runLater(() -> authStage.close());
+                    Platform.runLater(() -> {
+                        if (authStage != null) authStage.close();
+                        primaryStage.setTitle(String.format("%s - %s", CLIENT_MAIN_WINDOW_TITLE, sm.getMessage()));
+                    });
                     break;
                 case NEED_AUTHORIZATION:
                     showAuthWindow();
                     break;
-//                case SERVER_STOP:
-//                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
-//                    break;
+                case SERVER_STOP:
+                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
+                    break;
+                case AUTHORIZATION_ERROR:
+                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
+                    showAuthWindow();
+                    //TODO сделать диалог с ошибкой
+                    break;
             }
         }
     }
@@ -274,5 +285,16 @@ public class ClientMainWindowController implements SocketThreadListener {
     @Override
     public void onExceptionSocketThread(SocketThread socketThread, Socket socket, Exception e) {
         e.printStackTrace();
+    }
+
+    @Override
+    public void handle(ActionEvent event) {
+        Object src = event.getSource();
+        if (src instanceof Button) {
+            String id = ((Button) src).getId();
+            if (id.equals(btnOpenAuthWindow.getId())) showAuthWindow();
+            if (id.equals(btnChooseFile.getId())) chooseFile();
+            if (id.equals(btnUploadFile.getId())) sendFile();
+        }
     }
 }

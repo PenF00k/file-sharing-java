@@ -1,5 +1,6 @@
 package ru.penf00k.filesharing.client.controller;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -149,11 +150,13 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
     }
 
     private void showAlertDialog(Alert.AlertType type, String title, String header, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(content);
-        alert.showAndWait();
+        Platform.runLater(() -> {
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(header);
+            alert.setContentText(content);
+            alert.showAndWait();
+        });
     }
 
     public void setSocketThread(SocketThread socketThread) {

@@ -9,7 +9,6 @@ public class SocketThread extends Thread {
 
     private final SocketThreadListener listener;
     private final Socket socket;
-    private Socket pairedSocket;
     private ObjectOutputStream oos;
     private ObjectInputStream ois;
 
@@ -57,7 +56,7 @@ public class SocketThread extends Thread {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } finally {
-            listener.onStopSocketThread(this);
+            listener.onStopSocketThread(this, socket);
             close();
         }
     }

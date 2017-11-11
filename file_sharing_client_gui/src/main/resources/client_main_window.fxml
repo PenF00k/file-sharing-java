@@ -7,9 +7,9 @@
    <bottom>
       <ButtonBar buttonMinWidth="0.0" BorderPane.alignment="CENTER">
         <buttons>
-            <Button fx:id="btnOpenAuthWindow" mnemonicParsing="false" onAction="#showAuthWindow" text="Open auth window" />
-            <Button fx:id="btnChooseFile" mnemonicParsing="false" onAction="#chooseFile" text="Select File" />
-            <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#sendFile" text="Send File" />
+            <Button fx:id="btnOpenAuthWindow" mnemonicParsing="false" text="Open auth window" />
+            <Button fx:id="btnChooseFile" mnemonicParsing="false" text="Select File" />
+            <Button fx:id="btnUploadFile" mnemonicParsing="false" text="Upload File" />
         </buttons>
       </ButtonBar>
    </bottom>

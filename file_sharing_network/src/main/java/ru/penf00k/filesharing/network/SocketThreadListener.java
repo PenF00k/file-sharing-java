@@ -8,7 +8,7 @@ import java.net.Socket;
 public interface SocketThreadListener {
 
     void onStartSocketThread(SocketThread socketThread);
-    void onStopSocketThread(SocketThread socketThread);
+    void onStopSocketThread(SocketThread socketThread, Socket socket);
 
     void onReadySocketThread(SocketThread socketThread, Socket socket);
     void onReceiveString(SocketThread socketThread, Socket socket, String value);

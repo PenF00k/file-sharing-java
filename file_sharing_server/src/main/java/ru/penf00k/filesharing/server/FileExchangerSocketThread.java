@@ -1,6 +1,5 @@
 package ru.penf00k.filesharing.server;
 
-import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
@@ -27,10 +26,5 @@ public class FileExchangerSocketThread extends SocketThread {
 
     public String getUsername() {
         return username;
-    }
-
-    void sendError(String message) {
-        TextMessage errorMessage = new TextMessage("Error: " + message);
-        sendMessageObject(errorMessage);
     }
 }
