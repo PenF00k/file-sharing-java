@@ -40,13 +40,28 @@ public class SQLAuthManager implements AuthManager {
     @Override
     public void addNewUser(String username, String password) {
         try {
-            PreparedStatement preparedStatement = connection
+            PreparedStatement ps = connection
                     .prepareStatement("INSERT INTO users (username, password) VALUES (?, ?)");
-            preparedStatement.setString(1, username);
-            preparedStatement.setString(2, password);
-            preparedStatement.executeUpdate();
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String getUser(String username, String password) {
+        try {
+            PreparedStatement ps = connection
+                    .prepareStatement("SELECT username FROM users WHERE username = ? AND password = ?");
+            ps.setString(1, username);
+            ps.setString(2, password);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getString(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

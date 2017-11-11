@@ -4,5 +4,6 @@ public interface AuthManager {
 
     void init();
     void addNewUser(String username, String password);
+    String getUser(String username, String password);
     void dispose();
 }

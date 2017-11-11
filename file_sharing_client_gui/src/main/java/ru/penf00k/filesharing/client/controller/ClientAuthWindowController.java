@@ -4,6 +4,8 @@ import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import ru.penf00k.filesharing.common.AbstractMessage;
+import ru.penf00k.filesharing.common.AuthMessage;
 import ru.penf00k.filesharing.common.RegisterMessage;
 import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.SocketThread;
@@ -75,17 +77,22 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
         if (!isInputValid()) return;
         System.out.println("Input ok"); // TODO delete
         //TODO проверить, есть ли в базе такая пара логин-пароль
+        AbstractMessage message = null;
         switch (currentState) {
             case LOGIN:
                 //TODO
-                socketThread.sendMessageObject(new TextMessage("Text was delivered ok"));
+//                socketThread.sendMessageObject(new TextMessage("Text was delivered ok"));
+                message = new AuthMessage(tfUsername.getText(), pfPassword.getText());
                 break;
             case REGISTER:
-                RegisterMessage registerMessage = new RegisterMessage(tfUsername.getText(), pfPassword.getText());
-                socketThread.sendMessageObject(registerMessage);
+                message = new RegisterMessage(tfUsername.getText(), pfPassword.getText());
+                break;
+            case FORGOT_PASS:
+                //TODO
                 break;
             default: throw new RuntimeException("Invalid stage state");
         }
+        if (message != null) socketThread.sendMessageObject(message);
     }
 
     private boolean isInputValid() {

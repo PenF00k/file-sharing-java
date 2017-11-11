@@ -1,3 +1,3 @@
 package ru.penf00k.filesharing.client.controller;
 
-enum State {LOGIN, REGISTER}
+enum State {LOGIN, REGISTER, FORGOT_PASS}

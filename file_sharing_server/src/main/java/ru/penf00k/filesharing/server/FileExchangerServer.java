@@ -1,9 +1,6 @@
 package ru.penf00k.filesharing.server;
 
-import ru.penf00k.filesharing.common.AbstractMessage;
-import ru.penf00k.filesharing.common.FileMessage;
-import ru.penf00k.filesharing.common.RegisterMessage;
-import ru.penf00k.filesharing.common.TextMessage;
+import ru.penf00k.filesharing.common.*;
 import ru.penf00k.filesharing.network.ServerSocketThread;
 import ru.penf00k.filesharing.network.ServerSocketThreadListener;
 import ru.penf00k.filesharing.network.SocketThreadListener;
@@ -42,8 +39,12 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
 
     public void stopListening() {
         if (serverSocketThread == null || !serverSocketThread.isAlive()) {
-            putLog("FileExchangerServer was not running");
+            putLog("FileExchangerServer is not running");
             return;
+        }
+        ServerMessage serverMessage = new ServerMessage(Response.SERVER_STOP);
+        for (int i = 0; i < clients.size(); i++) {
+            clients.get(i).sendMessageObject(serverMessage);
         }
         serverSocketThread.interrupt();
         authManager.dispose();
@@ -58,6 +59,9 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     @Override
     public void onStopServerSocketThread(ServerSocketThread thread) {
         putLog("FileExchangerServer stopped");
+        for (int i = 0; i < clients.size(); i++) {
+            clients.get(i).close();
+        }
     }
 
     @Override
@@ -113,20 +117,46 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
 
     @Override
     public synchronized void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
+        client = (FileExchangerSocketThread) socketThread;
+        if (!client.isAuthorized() && !authorise(client, message)) {
+            if (message instanceof RegisterMessage) {
+                RegisterMessage rm = (RegisterMessage) message;
+                String username = rm.getUsername();
+                authManager.addNewUser(username, rm.getPassword());
+                client.setAuthorized(username);
+                System.out.println("Registered user: " + username);
+            } else {
+                ServerMessage serverMessage = new ServerMessage(Response.NEED_AUTHORIZATION);
+                client.sendMessageObject(serverMessage);
+            }
+            return;
+        }
+
         if (message instanceof FileMessage) {
             fm = (FileMessage) message;
             TextMessage textMessage = new TextMessage("type = " + fm.getType() + ", file name = " + fm.getFile().getName());
             socketThread.sendMessageObject(textMessage);
-        } else if (message instanceof RegisterMessage) {
-            RegisterMessage rm = (RegisterMessage) message;
-            authManager.addNewUser(rm.getUsername(), rm.getPassword());
+            return;
         }
+    }
+
+    private boolean authorise(FileExchangerSocketThread client, AbstractMessage message) {
+        if (!(message instanceof AuthMessage)) return false;
+        AuthMessage am = (AuthMessage) message;
+        String username = am.getUsername();
+        if (authManager.getUser(username, am.getPassword()) != null) {
+            client.setAuthorized(username);
+            client.sendMessageObject(new ServerMessage(Response.AUTHORIZATION_OK));
+            System.out.println("client authorised");
+            return true;
+        }
+        return false;
     }
 
     @Override
     public synchronized void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
         //TODO
-        File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());
+         File file = new File("C:\\Users\\curly\\Desktop\\files2share\\" + fm.getFile().getName());
         try (FileOutputStream fos = new FileOutputStream(file)) {
             int bytesRead;
             int totalBytes = 0;

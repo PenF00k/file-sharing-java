@@ -1,5 +1,6 @@
 package ru.penf00k.filesharing.server;
 
+import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
@@ -8,25 +9,28 @@ import java.net.Socket;
 public class FileExchangerSocketThread extends SocketThread {
 
     private boolean isAuthorized;
-    private String login;
+    private String username;
 
 
-    public FileExchangerSocketThread(String name, SocketThreadListener listener, Socket socket) {
+    FileExchangerSocketThread(String name, SocketThreadListener listener, Socket socket) {
         super(name, listener, socket);
     }
 
-    void setAuthorized(String login) {
+    void setAuthorized(String username) {
         isAuthorized = true;
-        this.login = login;
+        this.username = username;
     }
 
-    public boolean isAuthorized() {
+    boolean isAuthorized() {
         return isAuthorized;
     }
 
-    public String getLogin() {
-        return login;
+    public String getUsername() {
+        return username;
     }
 
-
+    void sendError(String message) {
+        TextMessage errorMessage = new TextMessage("Error: " + message);
+        sendMessageObject(errorMessage);
+    }
 }
