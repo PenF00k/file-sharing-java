@@ -7,8 +7,10 @@ import javafx.scene.control.*;
 import ru.penf00k.filesharing.common.AbstractMessage;
 import ru.penf00k.filesharing.common.AuthMessage;
 import ru.penf00k.filesharing.common.RegisterMessage;
-import ru.penf00k.filesharing.common.TextMessage;
 import ru.penf00k.filesharing.network.SocketThread;
+
+import java.io.*;
+import java.util.Properties;
 
 public class ClientAuthWindowController implements EventHandler<ActionEvent> {
 
@@ -41,6 +43,18 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
         btnSelectLogin.setOnAction(this);
         btnSelectRegister.setOnAction(this);
         btnProceedLoginRegister.setOnAction(this);
+        initProperties();
+    }
+
+    private void initProperties() {
+        Properties properties = new Properties();
+        try (InputStream is = new FileInputStream(ClientMainWindowController.PROPERTIES_FILE)) {
+            properties.load(is);
+            tfUsername.setText(properties.getProperty(ClientMainWindowController.PROPERTY_USERNAME));
+            pfPassword.setText(properties.getProperty(ClientMainWindowController.PROPERTY_PASSWORD));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void setStageFromState(State state) {
@@ -56,7 +70,8 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
                 btnProceedLoginRegister.setText("Register");
                 lblForgotPassword.setVisible(false);
                 break;
-            default: throw new RuntimeException("Invalid stage state");
+            default:
+                throw new RuntimeException("Invalid stage state");
         }
     }
 
@@ -75,6 +90,19 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
 
     private void tryLogin() {
         if (!isInputValid()) return;
+        Properties properties = new Properties();
+        try (InputStream is = new FileInputStream(ClientMainWindowController.PROPERTIES_FILE)) {
+            properties.load(is);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        try (OutputStream os = new FileOutputStream(ClientMainWindowController.PROPERTIES_FILE)) {
+            properties.setProperty(ClientMainWindowController.PROPERTY_USERNAME, tfUsername.getText());
+            properties.setProperty(ClientMainWindowController.PROPERTY_PASSWORD, pfPassword.getText());
+            properties.store(os, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.out.println("Input ok"); // TODO delete
         //TODO проверить, есть ли в базе такая пара логин-пароль
         AbstractMessage message = null;
@@ -90,7 +118,8 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
             case FORGOT_PASS:
                 //TODO
                 break;
-            default: throw new RuntimeException("Invalid stage state");
+            default:
+                throw new RuntimeException("Invalid stage state");
         }
         if (message != null) socketThread.sendMessageObject(message);
     }
@@ -112,9 +141,9 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
         if (sbErrorMessage.length() == 0) {
             return true;
         } else showAlertDialog(Alert.AlertType.ERROR,
-                    "Errors in fields",
-                    "Please correct the invalid fields",
-                    sbErrorMessage.toString());
+                "Errors in fields",
+                "Please correct the invalid fields",
+                sbErrorMessage.toString());
 
         return false;
     }

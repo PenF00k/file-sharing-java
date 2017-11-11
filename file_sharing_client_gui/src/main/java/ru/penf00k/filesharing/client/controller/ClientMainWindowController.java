@@ -12,10 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import ru.penf00k.filesharing.common.AbstractMessage;
-import ru.penf00k.filesharing.common.FileMessage;
-import ru.penf00k.filesharing.common.ServerMessage;
-import ru.penf00k.filesharing.common.TextMessage;
+import ru.penf00k.filesharing.common.*;
 import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
@@ -26,30 +23,17 @@ import java.util.Properties;
 
 public class ClientMainWindowController implements SocketThreadListener {
 
-    private static final String USERNAME_PATTERN = "^[A-Za-z]\\w{2,14}$";
-    private static final String PASSWORD_PATTERN = "^\\w{3,15}$";
-    private static final String IP_PATTERN = "^((0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)\\.){3}(0|1\\d?\\d?|2[0-4]?\\d?|25[0-5]?|[3-9]\\d?)$";
-    private static final String PORT_PATTERN = "^\\d+$";
     private static final int MAX_FILE_SIZE = 1024 * 1024 * 5; // in bytes
+    static final String PROPERTIES_FILE = "./fs.properties";
+    static final String PROPERTY_USERNAME = "username";
+    static final String PROPERTY_PASSWORD = "password";
 
-    @FXML
-    private TextField tfUsername;
-    @FXML
-    private TextField tfPassword;
-    @FXML
-    private TextField tfIPAddress;
-    @FXML
-    private TextField tfPort;
     @FXML
     private Label lblPathToFile;
     @FXML
     private Label lblServerMessage;
     @FXML
     private Button btnOpenAuthWindow;
-    @FXML
-    private Button btnConnect;
-    @FXML
-    private Button btnDisconnect;
     @FXML
     private Button btnChooseFile;
     @FXML
@@ -62,44 +46,34 @@ public class ClientMainWindowController implements SocketThreadListener {
 
     private final FileChooser fileChooser = new FileChooser();
     private File file;
-    private String msg;
-    private boolean isAuthorised;
     private String ipAddress;
     private int port;
+    private String username;
+    private String password;
+    private boolean isAuthorised;
 
     public ClientMainWindowController() {
     }
 
-    /*
-            Properties props = new Properties();
-        try (InputStream input = new FileInputStream("./db.properties")) {
-            props.load(input);
-            LOG_FILE_NAME = props.getProperty("log-file-name");
-            DB_PATH = props.getProperty("db-path");
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.error("Неверный файл db.properties");
-        }
-     */
-
     @FXML
     private void initialize() {
         System.out.println("ClientGUI controller initialize()"); //TODO
-        tfUsername.setText("PenF00k");
-        tfPassword.setText("123456");
-        tfIPAddress.setText("127.0.0.1");
-        tfPort.setText("9000");
         setFieldsDisabled(false);
         btnSendFile.setDisable(true);
         initProperties();
+        connect();
+//        tryAuthorise();
     }
 
     private void initProperties() {
         Properties properties = new Properties();
-        try (InputStream is = new FileInputStream("./fs.properties")) {
+        try (InputStream is = new FileInputStream(PROPERTIES_FILE)) {
             properties.load(is);
             ipAddress = properties.getProperty("ip-address");
             port = Integer.parseInt(properties.getProperty("port"));
+            username = properties.getProperty(PROPERTY_USERNAME);
+            password = properties.getProperty(PROPERTY_PASSWORD);
+            System.out.println("username: " + username + ", password: " + password);
         } catch (IOException e) {
             e.printStackTrace();
             Platform.runLater(() -> lblServerMessage.
@@ -107,17 +81,15 @@ public class ClientMainWindowController implements SocketThreadListener {
         }
     }
 
-    @FXML
     private void connect() {
         System.out.println("connect()"); //TODO
         if (isInputValid()) {
-            System.out.println("message: " + tfUsername.getText() + ": " + tfPassword.getText()
-                    + ": " + tfIPAddress.getText() + ": " + tfPort.getText()); //TODO
             try {
                 socket = new Socket(ipAddress, port);
                 socketThread = new SocketThread("SocketThread", this, socket);
                 setFieldsDisabled(true);
-                lblServerMessage.setText(null);
+                lblServerMessage.setText("Connected to server successfully");
+//                socketThread.sendMessageObject(new TextMessage("abracadabra"));
             } catch (IOException e) {
                 e.printStackTrace();
                 if (e.getMessage().equals("Connection refused: connect"))
@@ -126,27 +98,15 @@ public class ClientMainWindowController implements SocketThreadListener {
         }
     }
 
+    private void tryAuthorise() {
+        if (username != null && password != null) {
+            socketThread.sendMessageObject(new AuthMessage(username, password));
+        } else showAuthWindow();
+    }
+
     private boolean isInputValid() {
         //TODO сделать как в android setError
         String errorMessage = "";
-
-        if (!tfUsername.getText().matches(USERNAME_PATTERN)) {
-            errorMessage += "Username must start with a letter and have length from 3 to 15 characters\n";
-        }
-        if (!tfPassword.getText().matches(PASSWORD_PATTERN)) {
-            errorMessage += "Password must contain only letters and digits and have length from 3 to 15 characters\n";
-        }
-        if (!tfIPAddress.getText().matches(IP_PATTERN)) {
-            errorMessage += "IP address is not valid\n";
-        }
-//        if (!tfPort.getText().matches(PORT_PATTERN)) {
-//            errorMessage += "Port must be in range from 1024 to 65535\n";
-//        } else {
-//            port = Integer.parseInt(tfPort.getText());
-//            if (port < 1024 || port > 65535){
-//                errorMessage += "Port must be in range from 1024 to 65535\n";
-//            }
-//        }
 
         if (errorMessage.length() == 0) {
             return true;
@@ -164,13 +124,6 @@ public class ClientMainWindowController implements SocketThreadListener {
     }
 
     private void setFieldsDisabled(boolean disabled) {
-        tfUsername.setDisable(disabled);
-        tfPassword.setDisable(disabled);
-        tfIPAddress.setDisable(disabled);
-        tfPort.setDisable(disabled);
-
-        btnConnect.setDisable(disabled);
-        btnDisconnect.setDisable(!disabled);
         btnChooseFile.setDisable(!disabled);
         btnSendFile.setDisable(disabled);
     }
@@ -180,7 +133,6 @@ public class ClientMainWindowController implements SocketThreadListener {
         return tf.getText() == null || tf.getText().length() == 0;
     }
 
-    @FXML
     private void disconnect() {
         System.out.println("disconnect()"); //TODO
         file = null;
@@ -237,22 +189,26 @@ public class ClientMainWindowController implements SocketThreadListener {
     private Stage authStage;
 
     @FXML
-    private void openAuthWindow() {
-        try {
-            authStage = new Stage();
-            FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(getClass().getClassLoader().getResource("client_auth_window.fxml"));
-            Parent root = loader.load();
-            ClientAuthWindowController controller = loader.getController();
-            controller.setSocketThread(socketThread);
-            authStage.setTitle("Authentication");
-            authStage.initModality(Modality.WINDOW_MODAL);
-            authStage.initOwner(primaryStage);
-            authStage.setScene(new Scene(root));
-            authStage.show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    private void showAuthWindow() {
+        Platform.runLater(() -> {
+            try {
+                if (authStage == null) {
+                    authStage = new Stage();
+                    FXMLLoader loader = new FXMLLoader();
+                    loader.setLocation(getClass().getClassLoader().getResource("client_auth_window.fxml"));
+                    Parent root = loader.load();
+                    ClientAuthWindowController controller = loader.getController();
+                    controller.setSocketThread(socketThread);
+                    authStage.setTitle("Authentication");
+                    authStage.initModality(Modality.WINDOW_MODAL);
+                    authStage.initOwner(primaryStage);
+                    authStage.setScene(new Scene(root));
+                }
+                authStage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     public void setPrimaryStage(Stage primaryStage) {
@@ -268,6 +224,7 @@ public class ClientMainWindowController implements SocketThreadListener {
     @Override
     public void onStopSocketThread(SocketThread socketThread) {
         System.out.println("SocketThread stopped");
+        //TODO сделать диалог при отвале сервера и убрать закрытие stage
         Platform.runLater(() -> {
             if (authStage != null) authStage.close();
         });
@@ -277,7 +234,7 @@ public class ClientMainWindowController implements SocketThreadListener {
 
     @Override
     public void onReadySocketThread(SocketThread socketThread, Socket socket) {
-
+        tryAuthorise();
     }
 
     @Override
@@ -298,8 +255,13 @@ public class ClientMainWindowController implements SocketThreadListener {
             switch (sm.getResponse()) {
                 case AUTHORIZATION_OK:
                     if (authStage != null) Platform.runLater(() -> authStage.close());
+                    break;
+                case NEED_AUTHORIZATION:
+                    showAuthWindow();
+                    break;
 //                case SERVER_STOP:
 //                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
+//                    break;
             }
         }
     }

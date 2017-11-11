@@ -1,23 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ButtonBar?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.RowConstraints?>
-
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.penf00k.filesharing.client.controller.ClientMainWindowController">
    <bottom>
       <ButtonBar buttonMinWidth="0.0" BorderPane.alignment="CENTER">
         <buttons>
-            <Button fx:id="btnOpenAuthWindow" mnemonicParsing="false" onAction="#openAuthWindow" text="Open auth window" />
-          <Button fx:id="btnConnect" mnemonicParsing="false" onAction="#connect" text="Сonnect" />
-            <Button fx:id="btnDisconnect" mnemonicParsing="false" onAction="#disconnect" text="Disconnect" />
+            <Button fx:id="btnOpenAuthWindow" mnemonicParsing="false" onAction="#showAuthWindow" text="Open auth window" />
             <Button fx:id="btnChooseFile" mnemonicParsing="false" onAction="#chooseFile" text="Select File" />
             <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#sendFile" text="Send File" />
         </buttons>
@@ -43,18 +33,10 @@
                   <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Label text="Username" />
-                  <Label text="Password" GridPane.rowIndex="1" />
-                  <Label text="Server IP address" GridPane.rowIndex="2" />
-                  <Label text="Port" GridPane.rowIndex="3" />
-                  <TextField fx:id="tfUsername" GridPane.columnIndex="1" />
-                  <TextField fx:id="tfPassword" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <TextField fx:id="tfIPAddress" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                  <TextField fx:id="tfPort" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                  <Label text="File path" GridPane.rowIndex="4" />
-                  <Label fx:id="lblPathToFile" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                  <Label text="Server message" GridPane.rowIndex="5" />
-                  <Label fx:id="lblServerMessage" text="[Server message]" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                  <Label text="File path" GridPane.rowIndex="0" />
+                  <Label fx:id="lblPathToFile" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <Label text="Server message" GridPane.rowIndex="1" />
+                  <Label fx:id="lblServerMessage" text="[Server message]" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                </children>
             </GridPane>
          </children>
