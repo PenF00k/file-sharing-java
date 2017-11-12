@@ -1,16 +1,25 @@
 package ru.penf00k.filesharing.server;
 
-import javafx.application.Platform;
 import ru.penf00k.filesharing.common.*;
 import ru.penf00k.filesharing.network.ServerSocketThread;
 import ru.penf00k.filesharing.network.ServerSocketThreadListener;
-import ru.penf00k.filesharing.network.SocketThreadListener;
 import ru.penf00k.filesharing.network.SocketThread;
+import ru.penf00k.filesharing.network.SocketThreadListener;
 
-import java.io.*;
+import java.awt.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
+import java.util.stream.Collectors;
 
 public class FileExchangerServer implements ServerSocketThreadListener, SocketThreadListener {
 
@@ -136,10 +145,10 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
             if (message instanceof RegisterMessage) {
                 RegisterMessage rm = (RegisterMessage) message;
                 String username = rm.getUsername();
-                authManager.addNewUser(username, rm.getPassword());
-                client.setAuthorized(username);
+                String password = rm.getPassword();
+                authManager.addNewUser(username, password);
+                authorise(client, socket, new AuthMessage(username, password));
                 putLog(String.format("Registered user: %s",username));
-//                System.out.println("Registered user: " + username);
             } else {
                 client.sendMessageObject(new ServerMessage(Response.NEED_AUTHORIZATION));
             }
@@ -148,9 +157,45 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
 
         if (message instanceof FileMessage) {
             fm = (FileMessage) message;
-            TextMessage textMessage = new TextMessage("type = " + fm.getType() + ", file name = " + fm.getFile().getName());
-            socketThread.sendMessageObject(textMessage);
+            TextMessage tm = new TextMessage("file name = " + fm.getFile().getName());
+            socketThread.sendMessageObject(tm);
             return;
+        }
+
+        if (message instanceof RequestMessage) {
+            RequestMessage rm = (RequestMessage) message;
+            File file = new File(userDir, rm.getFile().getName());
+            Request request = rm.getRequest();
+            switch (request) {
+                case GET_FILES_LIST:
+                    //TODO
+                    break;
+                case DELETE_FILE:
+                    if (!file.delete())
+                        socketThread.sendMessageObject(new ServerMessage(Response.ERROR_DELETE_FILE));
+                    break;
+                case RENAME_FILE:
+                    if (!file.renameTo(new File(file.getParent(), rm.getNewFileName())))
+                        socketThread.sendMessageObject(new ServerMessage(Response.ERROR_RENAME_FILE));
+                    break;
+            }
+            sendFilesList(socketThread);
+        }
+    }
+
+    private void sendFilesList(SocketThread socketThread) {
+        try {
+            userDir = new File(String.format("%s\\%s", FILES_PATH, client.getUsername()));
+            if (!userDir.exists()) userDir.mkdirs();
+            List<File> files = Files.list(userDir.toPath())
+                    .map(path -> new File(path.toUri()))
+                    .collect(Collectors.toList());
+            socketThread.sendMessageObject(new FileListMessage(files));
+//                        socketThread.sendMessageObject(
+//                                new FileListMessage(
+//                                        Files.newDirectoryStream(Paths.get(userDir.toURI()))));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -162,9 +207,8 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
         String username = am.getUsername();
         if (authManager.getUser(username, am.getPassword()) != null) {
             client.setAuthorized(username);
-            userDir = new File(String.format("%s\\%s", FILES_PATH, client.getUsername()));
-            if (!userDir.exists()) userDir.mkdirs();
             client.sendMessageObject(new ServerMessage(Response.AUTHORIZATION_OK, username));
+            sendFilesList(client);
             putLog(String.format("Client %s was successfully authorised as %s", socket.getInetAddress().getHostAddress(), username));
             return true;
         } else client.sendMessageObject(new ServerMessage(Response.AUTHORIZATION_ERROR));
@@ -183,6 +227,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
                 totalBytes += bytesRead;
             }
             System.out.println("File saved fine");
+            sendFilesList(socketThread);
         } catch (IOException e) {
             e.printStackTrace();
         }

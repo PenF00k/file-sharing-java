@@ -6,7 +6,6 @@ public class AuthMessage extends AbstractMessage {
     private String password;
 
     public AuthMessage(String username, String password) {
-        setType(Messages.AUTH);
         this.username = username;
         this.password = password;
     }

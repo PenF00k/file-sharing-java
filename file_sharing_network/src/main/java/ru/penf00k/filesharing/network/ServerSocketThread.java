@@ -1,6 +1,7 @@
 package ru.penf00k.filesharing.network;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -24,6 +25,8 @@ public class ServerSocketThread extends Thread {
         listener.onStartServerSocketThread(this);
         while (!isInterrupted()) {
             try (ServerSocket serverSocket = new ServerSocket(port)) {
+//            try (ServerSocket serverSocket = new ServerSocket(port, 50, InetAddress.getByName("192.168.0.150"))){
+//                System.out.println(serverSocket.getInetAddress());
                 serverSocket.setSoTimeout(timeout);
                 listener.onReadyServerSocketThread(this, serverSocket);
                 while (!isInterrupted()) {

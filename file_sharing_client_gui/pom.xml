@@ -27,6 +27,7 @@
 
     <build>
         <finalName>FileSharingClient</finalName>
+        <directory>..</directory>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>

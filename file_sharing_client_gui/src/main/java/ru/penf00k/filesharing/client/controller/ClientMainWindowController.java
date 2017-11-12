@@ -1,25 +1,28 @@
 package ru.penf00k.filesharing.client.controller;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ru.penf00k.filesharing.common.*;
+import ru.penf00k.filesharing.common.util.Dialogs;
 import ru.penf00k.filesharing.network.SocketThread;
 import ru.penf00k.filesharing.network.SocketThreadListener;
 
 import java.io.*;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.Properties;
 
 public class ClientMainWindowController implements SocketThreadListener, EventHandler<ActionEvent> {
@@ -40,8 +43,11 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
     private Button btnChooseFile;
     @FXML
     private Button btnUploadFile; //TODO убрать эту кнопку, не нужна она
+    @FXML
+    private TableView<File> filesTable;
 
     private Stage primaryStage;
+    private ObservableList<File> filesList;
 
     private Socket socket;
     private SocketThread socketThread;
@@ -52,7 +58,7 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
     private int port;
     private String username;
     private String password;
-    private boolean isAuthorised;
+    private boolean isAuthorised; //TODO delete
 
     public ClientMainWindowController() {
     }
@@ -67,9 +73,63 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
         btnUploadFile.setDisable(true);
         initProperties();
         connect();
-        Platform.runLater(() -> primaryStage.setTitle(CLIENT_MAIN_WINDOW_TITLE));
+        filesList = FXCollections.observableArrayList();
 //        tryAuthorise();
+        Platform.runLater(() -> {
+            primaryStage.setTitle(CLIENT_MAIN_WINDOW_TITLE);
+        });
+        filesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        TableColumn<File, String> c1 = new TableColumn<>("File name");
+        c1.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getName()));
+        c1.setMinWidth(200);
+        TableColumn<File, Long> c2 = new TableColumn<>("Size");
+        c2.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().length() / 1024));
+        c2.setMinWidth(60);
+        c2.setMaxWidth(60);
+        c2.setStyle("-fx-alignment: CENTER");
+        TableColumn<File, String> c3 = new TableColumn<>("Last modified");
+        c3.setCellValueFactory(param -> new SimpleObjectProperty<>(
+                new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(param.getValue().lastModified())));
+        c3.setMinWidth(150);
+        c3.setMaxWidth(150);
+        c3.setStyle("-fx-alignment: CENTER");
+        filesTable.getColumns().addAll(c1, c2, c3);
+        filesTable.setItems(filesList);
+        filesTable.setRowFactory(param -> {
+            TableRow<File> row = new TableRow<>();
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem renameMenuItem = new MenuItem("Rename");
+            MenuItem deleteMenuItem = new MenuItem("Delete");
+
+            EventHandler contextMenuClickHandler = event -> {
+                File file = filesTable.getSelectionModel().getSelectedItem(); //TODO переделать, потому что независимо от того на каком элементе тыкнули он будет брать выбранный элемент
+                if (file == null) return;
+                Object src = event.getSource();
+                if (src.equals(renameMenuItem)){
+                    Dialogs.showRenameDialog(file.getName(),
+                            newFileName -> socketThread.sendMessageObject(
+                                    new RequestMessage(Request.RENAME_FILE, file, newFileName)));
+                } else if (src.equals(deleteMenuItem)){
+                    Dialogs.showConfirmDialog("Warning!",
+                            String.format("Delete file %s?", file.getName()),
+                            "Are you sure?",
+                            () -> socketThread.sendMessageObject(new RequestMessage(Request.DELETE_FILE, file)),
+                            null);
+//                    socketThread.sendMessageObject(new RequestMessage(Request.DELETE_FILE, file));
+                }
+
+                //TODO add actions on menu items
+            };
+
+            renameMenuItem.setOnAction(contextMenuClickHandler);
+            deleteMenuItem.setOnAction(contextMenuClickHandler);
+            contextMenu.getItems().addAll(renameMenuItem, deleteMenuItem);
+            param.setContextMenu(contextMenu);
+            return row;
+        });
     }
+
+
 
     private void initProperties() {
         Properties properties = new Properties();
@@ -116,14 +176,16 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
 
         if (errorMessage.length() == 0) {
             return true;
-        } else
-        {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
+        } else {
+            Dialogs.showErrorDialog("Errors in fields",
+                    "Please correct the invalid fields",
+                    errorMessage);
+            /*Alert alert = new Alert(Alert.AlertType.ERROR);
 //            alert.initOwner();
             alert.setTitle("Errors in fields");
             alert.setHeaderText("Please correct the invalid fields");
             alert.setContentText(errorMessage);
-            alert.showAndWait();
+            alert.showAndWait();*/
         }
 
         return false;
@@ -163,11 +225,14 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
             if (file == null) return;
             System.out.println("file length = " + file.length());
             if (file.length() <= MAX_FILE_SIZE) break;
-            Alert alert = new Alert(Alert.AlertType.ERROR);
+/*            Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("File size is too large");
             alert.setHeaderText("Please choose another file");
             alert.setContentText("Please choose a file with size less than 5 mb");
-            alert.showAndWait();
+            alert.showAndWait();*/
+            Dialogs.showErrorDialog("File size is too large",
+                    "Please choose another file",
+                    "Please choose a file with size less than 5 mb");
         } while (file.length() > MAX_FILE_SIZE);
         lblPathToFile.setText(file.getAbsolutePath());
         btnUploadFile.setDisable(false);
@@ -182,11 +247,14 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
             lblPathToFile.setText("");
             btnUploadFile.setDisable(true);
         } else {
-            Alert alert = new Alert(Alert.AlertType.ERROR);
+/*            Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("No file chosen");
             alert.setHeaderText("Please choose a file");
             alert.setContentText("Please choose a file");
-            alert.showAndWait();
+            alert.showAndWait();*/
+            Dialogs.showErrorDialog("No file chosen",
+                    "Please choose a file",
+                    "Please choose a file");
         }
     }
 
@@ -273,13 +341,18 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
                     showAuthWindow();
                     //TODO сделать диалог с ошибкой
                     break;
+                case ERROR_DELETE_FILE:
+                    //TODo ДИАЛОГ!!!
+                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
             }
+        } else if (message instanceof FileListMessage) {
+            filesList.setAll(((FileListMessage) message).getFiles());
         }
     }
 
     @Override
     public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
-        //TODO
+        //TODO сделать сохранение файла в указанную директорию
     }
 
     @Override

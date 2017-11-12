@@ -6,7 +6,6 @@ public class RegisterMessage extends AbstractMessage {
     private String password;
 
     public RegisterMessage(String username, String password) {
-        setType(Messages.REGISTER);
         this.username = username;
         this.password = password;
     }

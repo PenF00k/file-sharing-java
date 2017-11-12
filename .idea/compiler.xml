@@ -8,16 +8,21 @@
         <outputRelativeToContentRoot value="true" />
         <module name="client_gui" />
         <module name="common" />
-        <module name="file_sharing_client_gui" />
         <module name="file_sharing_common" />
         <module name="file_sharing_modules" />
         <module name="file_sharing_network" />
         <module name="file_sharing_server" />
-        <module name="file_sharing_server_gui" />
         <module name="FileExchanger" />
         <module name="network" />
         <module name="server" />
         <module name="server_gui" />
+      </profile>
+      <profile name="Annotation profile for file_sharing" enabled="true">
+        <sourceOutputDir name="../generated-sources/annotations" />
+        <sourceTestOutputDir name="../generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="file_sharing_client_gui" />
+        <module name="file_sharing_server_gui" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

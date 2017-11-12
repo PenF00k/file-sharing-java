@@ -44,8 +44,12 @@ public class SocketThread extends Thread {
                         System.out.println("Message is instance of AuthMessage");
                     }  else if (message instanceof ServerMessage) {
                         System.out.println("Message is instance of ServerMessage");
+                    }  else if (message instanceof RequestMessage) {
+                        System.out.println("Message is instance of RequestMessage");
+                    }  else if (message instanceof FileListMessage) {
+                        System.out.println("Message is instance of FileListMessage");
                     } else {
-                        throw new RuntimeException("Invalid message type");
+                        throw new RuntimeException("Invalid message type" + message);
                     }
                 } catch (OptionalDataException e) {
                     e.printStackTrace();

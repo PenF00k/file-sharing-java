@@ -8,7 +8,6 @@ public class FileMessage extends AbstractMessage {
     private int length;
 
     public FileMessage(File file, int length) {
-        setType(Messages.FILE);
         this.file = file;
         this.length = length;
 

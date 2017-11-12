@@ -4,8 +4,10 @@ public enum Response {
     //TODO удалить поле code
     NEED_AUTHORIZATION(1, "You need to login first"),
     AUTHORIZATION_OK(2, "You have been successfully authorised"),
+    SERVER_STOP(-1, "Server stopped"),
     AUTHORIZATION_ERROR(-2, "Invalid username or password"),
-    SERVER_STOP(-1, "Server stopped");
+    ERROR_DELETE_FILE(-3, "Couldn't delete file"),
+    ERROR_RENAME_FILE(-4, "Couldn't rename file");
 
     private int code;
     private String message;

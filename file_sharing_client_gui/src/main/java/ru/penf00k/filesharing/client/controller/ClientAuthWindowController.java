@@ -8,6 +8,7 @@ import javafx.scene.control.*;
 import ru.penf00k.filesharing.common.AbstractMessage;
 import ru.penf00k.filesharing.common.AuthMessage;
 import ru.penf00k.filesharing.common.RegisterMessage;
+import ru.penf00k.filesharing.common.util.Dialogs;
 import ru.penf00k.filesharing.network.SocketThread;
 
 import java.io.*;
@@ -141,22 +142,11 @@ public class ClientAuthWindowController implements EventHandler<ActionEvent> {
 
         if (sbErrorMessage.length() == 0) {
             return true;
-        } else showAlertDialog(Alert.AlertType.ERROR,
-                "Errors in fields",
+        } else Dialogs.showErrorDialog("Errors in fields",
                 "Please correct the invalid fields",
                 sbErrorMessage.toString());
 
         return false;
-    }
-
-    private void showAlertDialog(Alert.AlertType type, String title, String header, String content) {
-        Platform.runLater(() -> {
-            Alert alert = new Alert(type);
-            alert.setTitle(title);
-            alert.setHeaderText(header);
-            alert.setContentText(content);
-            alert.showAndWait();
-        });
     }
 
     public void setSocketThread(SocketThread socketThread) {

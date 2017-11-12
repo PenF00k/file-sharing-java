@@ -6,7 +6,6 @@ public class ServerMessage extends AbstractMessage {
     private String message;
 
     public ServerMessage(Response response) {
-        setType(Messages.SERVER);
         this.response = response;
     }
 
