@@ -1,6 +1,7 @@
 package ru.penf00k.filesharing.server;
 
 import ru.penf00k.filesharing.common.*;
+import ru.penf00k.filesharing.common.util.Utils;
 import ru.penf00k.filesharing.network.ServerSocketThread;
 import ru.penf00k.filesharing.network.ServerSocketThreadListener;
 import ru.penf00k.filesharing.network.SocketThread;
@@ -130,8 +131,6 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
         }
     }
 
-    private FileMessage fm;
-
     @Override
     public synchronized void onReceiveObjectMessage(SocketThread socketThread, Socket socket, AbstractMessage message) {
         client = (FileExchangerSocketThread) socketThread;
@@ -156,7 +155,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
         }
 
         if (message instanceof FileMessage) {
-            fm = (FileMessage) message;
+            FileMessage fm = (FileMessage) message;
             socketThread.sendMessageObject( new TextMessage("file name = " + fm.getFile().getName()));
             return;
         }
@@ -172,8 +171,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
                 case DOWNLOAD_FILE:
                     if (!file.exists())
                         socketThread.sendMessageObject(new ServerMessage(Response.ERROR_DOWNLOAD_FILE));
-//                    File fileToSend =
-                    socketThread.sendMessageObject(new FileMessage(file));
+                    socketThread.sendMessageObject(new FileMessage(file, file.length()));
                     socketThread.sendFile(file);
                     break;
                 case RENAME_FILE:
@@ -222,13 +220,20 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
     }
 
     @Override
-    public synchronized void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
+    public synchronized void onReceiveFile(SocketThread socketThread, Socket socket, FileMessage fm, ObjectInputStream ois) {
         File file = new File(String.format("%s\\%s", userDir, fm.getFile().getName()));
+        Utils.FileNameExtension fnm = Utils.fileToFNM(file);
+        String fileNameNoExtension = fnm.getName();
+        int cnt = 1;
+        while (file.exists()) {
+            fnm.setName(String.format("%s(%s)", fileNameNoExtension, cnt++));
+            file = new File(String.format("%s\\%s", userDir, fnm.toFileName()));
+        }
         try (FileOutputStream fos = new FileOutputStream(file)) {
             int bytesRead;
             int totalBytes = 0;
             byte[] buffer = new byte[8192];
-            while (totalBytes < fm.getFile().length() && (bytesRead = ois.read(buffer)) != -1) { //TODO задать вопрос: если поменять местами условие, то цикл бесконечный
+            while (totalBytes < fm.getLength() && (bytesRead = ois.read(buffer)) != -1) { //TODO задать вопрос: если поменять местами условие, то цикл бесконечный
                 fos.write(buffer, 0, bytesRead);
                 totalBytes += bytesRead;
             }

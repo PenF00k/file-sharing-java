@@ -12,6 +12,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -38,6 +39,8 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
     @FXML
     private Label lblServerMessage;
     @FXML
+    private Button btnReconnect;
+    @FXML
     private Button btnOpenAuthWindow;
     @FXML
     private Button btnChooseFile;
@@ -52,7 +55,9 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
     private Socket socket;
     private SocketThread socketThread;
 
+    private final DirectoryChooser directoryChooser = new DirectoryChooser();
     private final FileChooser fileChooser = new FileChooser();
+    private File directoryToSave;
     private File file;
     private String ipAddress;
     private int port;
@@ -66,23 +71,23 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
     @FXML
     private void initialize() {
         System.out.println("ClientGUI controller initialize()"); //TODO
+        btnReconnect.setOnAction(this);
         btnOpenAuthWindow.setOnAction(this);
         btnChooseFile.setOnAction(this);
         btnUploadFile.setOnAction(this);
         setFieldsDisabled(false);
         btnUploadFile.setDisable(true);
+        btnReconnect.setDisable(true);
         initProperties();
         connect();
         filesList = FXCollections.observableArrayList();
 //        tryAuthorise();
-        Platform.runLater(() -> {
-            primaryStage.setTitle(CLIENT_MAIN_WINDOW_TITLE);
-        });
+        Platform.runLater(() -> primaryStage.setTitle(CLIENT_MAIN_WINDOW_TITLE));
         filesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         TableColumn<File, String> c1 = new TableColumn<>("File name");
         c1.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getName()));
         c1.setMinWidth(200);
-        TableColumn<File, Long> c2 = new TableColumn<>("Size");
+        TableColumn<File, Long> c2 = new TableColumn<>("Size, KB");
         c2.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().length() / 1024));
         c2.setMinWidth(60);
         c2.setMaxWidth(60);
@@ -108,6 +113,9 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
                 if (file == null) return;
                 Object src = event.getSource();
                 if (src.equals(downloadMenuItem)){
+                    directoryChooser.setTitle("Choose the directory to save your file");
+                    if (directoryToSave != null) directoryChooser.setInitialDirectory(directoryToSave);
+                    directoryToSave = directoryChooser.showDialog(primaryStage);
                     socketThread.sendMessageObject(new RequestMessage(Request.DOWNLOAD_FILE, file));
                 } else if (src.equals(renameMenuItem)){
                     Dialogs.showRenameDialog(file.getName(),
@@ -161,8 +169,12 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
 //                socketThread.sendMessageObject(new TextMessage("abracadabra"));
             } catch (IOException e) {
                 e.printStackTrace();
-                if (e.getMessage().equals("Connection refused: connect"))
+                if (e.getMessage().equals("Connection refused: connect")){
                     lblServerMessage.setText("Server is offline"); //TODO сделать диалог с ошибкой
+                } else if (e.getMessage().equals("Connection timed out: connect")){
+                    lblServerMessage.setText("Connection timed out: connect"); //TODO сделать диалог с ошибкой
+                }
+                btnReconnect.setDisable(false);
             }
         }
     }
@@ -243,7 +255,7 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
 
     private void sendFile() {
         if (file != null) {
-            socketThread.sendMessageObject(new FileMessage(file));
+            socketThread.sendMessageObject(new FileMessage(file, file.length()));
             socketThread.sendFile(file);
             file = null;
             lblPathToFile.setText("");
@@ -332,32 +344,33 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
                         primaryStage.setTitle(String.format("%s - %s", CLIENT_MAIN_WINDOW_TITLE, sm.getMessage()));
                     });
                     break;
-                case NEED_AUTHORIZATION:
-                    showAuthWindow();
-                    break;
                 case SERVER_STOP:
-                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
+                    Platform.runLater(() -> {
+                        lblServerMessage.setText(sm.getResponse().getMessage());
+                        btnReconnect.setDisable(false);
+                    });
                     break;
+                case NEED_AUTHORIZATION:
                 case AUTHORIZATION_ERROR:
-                    Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
                     showAuthWindow();
-                    //TODO сделать диалог с ошибкой
                     break;
                 case ERROR_DELETE_FILE:
-                    //TODo ДИАЛОГ!!!
+                case ERROR_RENAME_FILE:
+                case ERROR_DOWNLOAD_FILE:
                     Platform.runLater(() -> lblServerMessage.setText(sm.getResponse().getMessage()));
+                    break;
             }
+            if (sm.getResponse().getCode() < 0) Dialogs.showErrorDialog(sm);
         } else if (message instanceof FileListMessage) {
             filesList.setAll(((FileListMessage) message).getFiles());
         }
     }
 
     @Override
-    public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
+    public void onReceiveFile(SocketThread socketThread, Socket socket, FileMessage fm, ObjectInputStream ois) {
         //TODO сделать сохранение файла в указанную директорию
-        /*
-                File file = new File(String.format("%s\\%s", userDir, fm.getFile().getName()));
-        try (FileOutputStream fos = new FileOutputStream(file)) {
+        File fileToSave = new File(directoryToSave, fm.getFile().getName());
+        try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
             int bytesRead;
             int totalBytes = 0;
             byte[] buffer = new byte[8192];
@@ -366,16 +379,16 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
                 totalBytes += bytesRead;
             }
             System.out.println("File saved fine");
-            sendFilesList(socketThread);
         } catch (IOException e) {
             e.printStackTrace();
         }
-         */
     }
 
     @Override
     public void onExceptionSocketThread(SocketThread socketThread, Socket socket, Exception e) {
         e.printStackTrace();
+        disconnect();
+        btnReconnect.setDisable(false);
     }
 
     @Override
@@ -383,6 +396,10 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
         Object src = event.getSource();
         if (src instanceof Button) {
             String id = ((Button) src).getId();
+            if (id.equals(btnReconnect.getId())) {
+                btnReconnect.setDisable(true);
+                connect();
+            }
             if (id.equals(btnOpenAuthWindow.getId())) showAuthWindow();
             if (id.equals(btnChooseFile.getId())) chooseFile();
             if (id.equals(btnUploadFile.getId())) sendFile();

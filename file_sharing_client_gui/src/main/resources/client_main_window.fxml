@@ -14,6 +14,7 @@
    <bottom>
       <ButtonBar buttonMinWidth="0.0" BorderPane.alignment="CENTER">
         <buttons>
+            <Button fx:id="btnReconnect" mnemonicParsing="false" text="Reconnect" />
             <Button fx:id="btnOpenAuthWindow" mnemonicParsing="false" text="Open auth window" />
             <Button fx:id="btnChooseFile" mnemonicParsing="false" text="Select File" />
             <Button fx:id="btnUploadFile" mnemonicParsing="false" text="Upload File" />
@@ -42,6 +43,9 @@
       </GridPane>
    </top>
    <center>
-      <TableView fx:id="filesTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+      <TableView fx:id="filesTable" prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets bottom="10.0" />
+         </BorderPane.margin></TableView>
    </center>
 </BorderPane>

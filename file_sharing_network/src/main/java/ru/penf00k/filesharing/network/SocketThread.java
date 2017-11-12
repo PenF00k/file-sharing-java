@@ -34,7 +34,7 @@ public class SocketThread extends Thread {
                     //TODO убрать лишние ифы
                     if (message instanceof FileMessage) {
                         System.out.println("Message is instance of FileMessage");
-                        listener.onReceiveFile(this, socket, ois);
+                        listener.onReceiveFile(this, socket, (FileMessage) message, ois);
                     } else if (message instanceof TextMessage) {
                         System.out.println("Message is instance of TextMessage");
                         listener.onReceiveString(this, socket, ((TextMessage) message).getText());

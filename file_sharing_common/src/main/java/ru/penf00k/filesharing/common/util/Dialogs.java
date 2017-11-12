@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
+import ru.penf00k.filesharing.common.ServerMessage;
 
 import java.util.Optional;
 
@@ -17,6 +18,10 @@ public class Dialogs {
             alert.setContentText(message);
             alert.showAndWait();
         });
+    }
+
+    public static void showErrorDialog(ServerMessage sm) {
+        showErrorDialog("Error", "Server error", sm.getResponse().getMessage());
     }
 
     public static void showConfirmDialog(String title, String header, String message, Runnable onConfirm, Runnable onCancel) {
@@ -39,14 +44,19 @@ public class Dialogs {
 
     public static void showRenameDialog(String name, Rename onRename) {
         Platform.runLater(() -> {
-            String extension = name.substring(name.lastIndexOf(".") + 1);
-            String nameNoExtension = name.substring(0, name.lastIndexOf("."));
-            TextInputDialog dialog = new TextInputDialog(nameNoExtension);
+            Utils.FileNameExtension fnm = Utils.fileNameToFNM(name);
+//            String extension = name.substring(name.lastIndexOf(".") + 1);
+//            String nameNoExtension = name.substring(0, name.lastIndexOf("."));
+            TextInputDialog dialog = new TextInputDialog(fnm.getName());
             dialog.setTitle("Rename file");
             dialog.setHeaderText("Enter new name and press OK");
             dialog.setContentText("New name: ");
             Optional<String> result = dialog.showAndWait();
-            result.ifPresent(s -> onRename.onNewFileName(String.format("%s.%s", s, extension)));
+//            result.ifPresent(s -> onRename.onNewFileName(String.format("%s.%s", s, extension)));
+            result.ifPresent(s -> {
+                fnm.setName(s);
+                onRename.onNewFileName(Utils.getFileNameFromFNM(fnm));
+            });
         });
     }
 }
