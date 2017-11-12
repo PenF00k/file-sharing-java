@@ -157,8 +157,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
 
         if (message instanceof FileMessage) {
             fm = (FileMessage) message;
-            TextMessage tm = new TextMessage("file name = " + fm.getFile().getName());
-            socketThread.sendMessageObject(tm);
+            socketThread.sendMessageObject( new TextMessage("file name = " + fm.getFile().getName()));
             return;
         }
 
@@ -170,13 +169,20 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
                 case GET_FILES_LIST:
                     //TODO
                     break;
-                case DELETE_FILE:
-                    if (!file.delete())
-                        socketThread.sendMessageObject(new ServerMessage(Response.ERROR_DELETE_FILE));
+                case DOWNLOAD_FILE:
+                    if (!file.exists())
+                        socketThread.sendMessageObject(new ServerMessage(Response.ERROR_DOWNLOAD_FILE));
+//                    File fileToSend =
+                    socketThread.sendMessageObject(new FileMessage(file));
+                    socketThread.sendFile(file);
                     break;
                 case RENAME_FILE:
                     if (!file.renameTo(new File(file.getParent(), rm.getNewFileName())))
                         socketThread.sendMessageObject(new ServerMessage(Response.ERROR_RENAME_FILE));
+                    break;
+                case DELETE_FILE:
+                    if (!file.delete())
+                        socketThread.sendMessageObject(new ServerMessage(Response.ERROR_DELETE_FILE));
                     break;
             }
             sendFilesList(socketThread);
@@ -222,7 +228,7 @@ public class FileExchangerServer implements ServerSocketThreadListener, SocketTh
             int bytesRead;
             int totalBytes = 0;
             byte[] buffer = new byte[8192];
-            while (totalBytes < fm.getLength() && (bytesRead = ois.read(buffer)) != -1) { //TODO задать вопрос: если поменять местами условие, то цикл бесконечный
+            while (totalBytes < fm.getFile().length() && (bytesRead = ois.read(buffer)) != -1) { //TODO задать вопрос: если поменять местами условие, то цикл бесконечный
                 fos.write(buffer, 0, bytesRead);
                 totalBytes += bytesRead;
             }

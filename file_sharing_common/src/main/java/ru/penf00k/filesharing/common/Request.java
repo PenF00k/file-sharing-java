@@ -3,6 +3,7 @@ package ru.penf00k.filesharing.common;
 public enum Request {
     //TODO удалить поле message
     GET_FILES_LIST("Get all files"),
+    DOWNLOAD_FILE("Download file"),
     RENAME_FILE("Rename file"),
     DELETE_FILE("Delete file");
 

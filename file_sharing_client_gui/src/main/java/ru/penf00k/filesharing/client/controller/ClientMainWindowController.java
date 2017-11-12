@@ -98,14 +98,18 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
         filesTable.setRowFactory(param -> {
             TableRow<File> row = new TableRow<>();
             ContextMenu contextMenu = new ContextMenu();
+            MenuItem downloadMenuItem = new MenuItem("Download");
             MenuItem renameMenuItem = new MenuItem("Rename");
             MenuItem deleteMenuItem = new MenuItem("Delete");
 
             EventHandler contextMenuClickHandler = event -> {
                 File file = filesTable.getSelectionModel().getSelectedItem(); //TODO переделать, потому что независимо от того на каком элементе тыкнули он будет брать выбранный элемент
+                System.out.println(String.format("Selected file: %s", row.getItem()));
                 if (file == null) return;
                 Object src = event.getSource();
-                if (src.equals(renameMenuItem)){
+                if (src.equals(downloadMenuItem)){
+                    socketThread.sendMessageObject(new RequestMessage(Request.DOWNLOAD_FILE, file));
+                } else if (src.equals(renameMenuItem)){
                     Dialogs.showRenameDialog(file.getName(),
                             newFileName -> socketThread.sendMessageObject(
                                     new RequestMessage(Request.RENAME_FILE, file, newFileName)));
@@ -121,15 +125,14 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
                 //TODO add actions on menu items
             };
 
+            downloadMenuItem.setOnAction(contextMenuClickHandler);
             renameMenuItem.setOnAction(contextMenuClickHandler);
             deleteMenuItem.setOnAction(contextMenuClickHandler);
-            contextMenu.getItems().addAll(renameMenuItem, deleteMenuItem);
+            contextMenu.getItems().addAll(downloadMenuItem, renameMenuItem, deleteMenuItem);
             param.setContextMenu(contextMenu);
             return row;
         });
     }
-
-
 
     private void initProperties() {
         Properties properties = new Properties();
@@ -240,8 +243,7 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
 
     private void sendFile() {
         if (file != null) {
-            FileMessage fileMessage = new FileMessage(file, (int) file.length());
-            socketThread.sendMessageObject(fileMessage);
+            socketThread.sendMessageObject(new FileMessage(file));
             socketThread.sendFile(file);
             file = null;
             lblPathToFile.setText("");
@@ -353,6 +355,22 @@ public class ClientMainWindowController implements SocketThreadListener, EventHa
     @Override
     public void onReceiveFile(SocketThread socketThread, Socket socket, ObjectInputStream ois) {
         //TODO сделать сохранение файла в указанную директорию
+        /*
+                File file = new File(String.format("%s\\%s", userDir, fm.getFile().getName()));
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            int bytesRead;
+            int totalBytes = 0;
+            byte[] buffer = new byte[8192];
+            while (totalBytes < fm.getFile().length() && (bytesRead = ois.read(buffer)) != -1) {
+                fos.write(buffer, 0, bytesRead);
+                totalBytes += bytesRead;
+            }
+            System.out.println("File saved fine");
+            sendFilesList(socketThread);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+         */
     }
 
     @Override

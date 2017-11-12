@@ -46,7 +46,7 @@ public class Dialogs {
             dialog.setHeaderText("Enter new name and press OK");
             dialog.setContentText("New name: ");
             Optional<String> result = dialog.showAndWait();
-            onRename.onNewFileName(String.format("%s.%s", result.get(), extension));
+            result.ifPresent(s -> onRename.onNewFileName(String.format("%s.%s", s, extension)));
         });
     }
 }
